@@ -1,4 +1,4 @@
-package question2011;
+package practice.question2011;
 
 public class Magazine extends Book {
     private int year;

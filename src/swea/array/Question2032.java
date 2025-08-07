@@ -1,4 +1,4 @@
-package array;
+package swea.array;
 
 import java.io.*;
 import java.util.*;

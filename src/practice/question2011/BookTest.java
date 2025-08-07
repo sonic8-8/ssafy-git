@@ -1,4 +1,4 @@
-package question2011;
+package practice.question2011;
 
 public class BookTest {
     public static void main(String[] args) {
