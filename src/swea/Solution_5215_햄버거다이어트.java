@@ -3,7 +3,25 @@ package swea;
 import java.io.*;
 import java.util.*;
 
-public class Solution_5215_햄버거_다이어트 {
+import java.io.*;
+import java.util.*;
+
+/**
+ * 아이디어:
+ * 1. 백트래킹으로 조합을 구현합니다.
+ * -> 매개변수로 int start를 받아서 구현
+ *
+ * 2. 재귀 함수를 사용해 점수합과 칼로리합을 관리합니다.
+ * -> 매개변수로 칼로리합과 점수합을 받아서 상태 복원을 구현
+ *
+ * 3. 가독성을 위해 상수 추출을 활용합니다.
+ * -> SCORE, KCAL
+ */
+
+/**
+ * 난이도: D3
+ */
+public class Solution_5215_햄버거다이어트 {
     static int T;
     static int N, L;
     static int[][] foods;
