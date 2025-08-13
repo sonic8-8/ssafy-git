@@ -134,7 +134,7 @@ public class Solution_5650_핀볼게임 {
             col += DIR_COL[direction];
 
             // 경계 밖으로 넘어갔는지 체크합니다. (경계 밖은 벽으로 취급함)
-            if (row < 0 || row >= N || col < 0 || col >= N) {
+            if (row < 0 || N <= row || col < 0 || N <= col) {
                 direction = REFLECT[WALL_BLOCK][direction]; // 벽은 블록 5처럼 동작합니다.
                 score++;
                 continue;
