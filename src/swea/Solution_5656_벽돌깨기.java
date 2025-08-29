@@ -3,17 +3,32 @@ package swea;
 import java.io.*;
 import java.util.*;
 
+/**
+ * 아이디어:
+ * 시뮬레이션 + DFS + BFS
+ * 공중에서 구슬을 떨어뜨린다. (떨어뜨릴 위치는 좌우로 조절 가능)
+ * 공중에서 떨어뜨리기 때문에, 맨 위에 있는 벽돌만 깨트릴 수 있다
+ * 벽돌에 써있는 숫자만큼 주변 벽돌을 연쇄적으로 깨트릴 수 있다
+ * 최대한 벽돌을 많이 제거 후 남은 벽돌의 개수 구하기
+ *
+ * 제거 과정
+ * 1. 떨어뜨릴 위치로 모든 경우의 수 만들기 (중복 순열)
+ *      ex) N이 3이라면, 0 1 1 / 1 2 1 / 3 1 2 같은 경우를 만들 수 있음
+ * 2. bfs로 벽돌 깨트리기 (깨진 벽돌은 0으로 만들기)
+ * 3. 남은 벽돌에 중력 적용시키기
+ * 4. depth가 N에 도달하거나 벽돌이 모두 깨진 경우 min 업데이트
+ */
+
+/**
+ * 메모리: 96,976 KB
+ * 시간: 219 ms
+ * 난이도: 모의 SW 역량 테스트 66.90%
+ */
 public class Solution_5656_벽돌깨기 {
     static int T;
     static int N, W, H;
 
-    static int[][] bricks;
-    static boolean[][] visited;
-
-    static int totalBrickCount;
-    static int deletedBrickCount;
-
-    static int[] orders;
+    static int min;
 
     static int[] DIR_ROW = {-1, 0, 1, 0};
     static int[] DIR_COL = {0, 1, 0, -1};
@@ -32,70 +47,19 @@ public class Solution_5656_벽돌깨기 {
             W = Integer.parseInt(st.nextToken());
             H = Integer.parseInt(st.nextToken());
 
-            bricks = new int[H][W];
-            totalBrickCount = 0;
+            int[][] board = new int[H][W];
 
             for (int i = 0; i < H; i++) {
                 st = new StringTokenizer(br.readLine());
                 for (int j = 0; j < W; j++) {
-                    bricks[i][j] = Integer.parseInt(st.nextToken());
-
-                    if (bricks[i][j] != 0) {
-                        totalBrickCount++;
-                    }
+                    board[i][j] = Integer.parseInt(st.nextToken());
                 }
             }
 
-            // N: 구슬 쏠 수 있는 횟수
-            // W X H 배열
+            min = Integer.MAX_VALUE;
+            dfs(0, board);
 
-            // 구슬을 공중에서 떨어뜨린다. 좌우로만 움직여 위치를 조절하고 떨어뜨리면
-            // 맨 위에 있는 벽돌만 깨트릴 수 있다
-            // 벽돌 숫자 의미: 벽돌을 중심으로 상하좌우 N - 1만큼 제거
-
-            // 최대한 벽돌을 많이 제거
-            // 남은 벽돌의 개수를 구하기
-
-            // 제거 과정
-
-            int max = Integer.MIN_VALUE;
-
-            // 모든 경우의 수를 만들어야한다
-            // 시작점을 어떻게 설정할 것인가?
-            // 재귀함수로 구현해야하나?
-            // 개수가 정해져있으니 조합?
-            // 이걸 잘 모르겠는데..
-            // 예를 들어, 0 0 0, 0 0 1, 0 0 2, ..., 0 0 W -1 까지 있고
-            // 0 1 0, 0 1 1, 0 1 2, ..., 0 1 w - 1..
-            // 브루트 포스로 해보는게 나을듯?
-            // 그런데 N이 4까지 될 수 있어서 각 경우마다 브루트포스로 구현하려면 4중 for문까지 해야되는데 ..?
-            // 재귀함수로 구현하는게 나을듯
-
-            orders = new int[3];
-            dfs(0); // todo: 경우의 수 구하기 하다 말았음
-
-            visited = new boolean[H][W];
-            deletedBrickCount = 0;
-            for (int col = 0; col < W; col++) {
-                int row = 0;
-
-                // 1. bfs로 탐색하기
-                // 2. 탐색한 범위 내의 숫자를 모두 0으로 만들기
-                bfs(row, col);
-
-                // 3. 0이 아닌 숫자에 중력 적용시키기 (아래로 이동)
-                adaptGravity();
-
-                max = Math.max(max, deletedBrickCount);
-
-            }
-            // 4. 제거한 벽돌 수를 count라고 했을때 Math.max(max, count)로 최대 제거 벽돌 수를 갱신한다
-            // 5. 전체 벽돌 수 - count로 남은 벽돌 수를 구한다
-
-            // 0을 제외한 첫 번째 숫자를 찾기
-
-
-            sb.append('#').append(t).append(' ').append(max).append('\n');
+            sb.append('#').append(t).append(' ').append(min).append('\n');
         }
 
         bw.write(sb.toString());
@@ -104,10 +68,76 @@ public class Solution_5656_벽돌깨기 {
         bw.close();
     }
 
-    private static void bfs(int r, int c) {
+    private static void dfs(int depth, int[][] simulationBoard) {
+        // 구슬 떨어뜨리기를 N회 시뮬레이션 했다면 남아있는 구슬 수를 센다.
+        if (depth == N) {
+            int remainBricks = countBricksFrom(simulationBoard);
+            min = Math.min(min, remainBricks);
+            return;
+        }
+
+        if (countBricksFrom(simulationBoard) == 0) {
+            min = 0;
+            return;
+        }
+
+        // 좌우로 움직이며 구슬을 떨어뜨릴 수 있는 모든 경우를 만든다
+        for (int col = 0; col < W; col++) {
+            // 배열 복사
+            int[][] copiedBoard = copyOf(simulationBoard);
+
+            // 쌓여있는 벽돌 중 가장 위쪽 벽돌의 row 찾기
+            int topBrickRow = getTopBrickRow(copiedBoard, col);
+            if (topBrickRow == -1) {
+                continue;
+            }
+
+            // 구슬 떨어뜨린 후 벽돌 파괴
+            bfs(copiedBoard, topBrickRow, col);
+
+            // 중력 적용
+            adaptGravity(copiedBoard);
+
+            // 다음 경우 시뮬레이션
+            dfs(depth + 1, copiedBoard);
+        }
+    }
+
+    private static int[][] copyOf(int[][] simulationBoard) {
+        int[][] copiedBoard = new int[H][W];
+        for (int j = 0; j < H; j++) {
+            copiedBoard[j] = simulationBoard[j].clone();
+        }
+        return copiedBoard;
+    }
+
+    private static int countBricksFrom(int[][] simulationBoard) {
+        int count = 0;
+        for (int row = 0; row < H; row++) {
+            for (int col = 0; col < W; col++) {
+                if (simulationBoard[row][col] != 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    // 가장 위쪽 벽돌 찾기
+    private static int getTopBrickRow(int[][] simulationBoard, int col) {
+        for (int row = 0; row < H; row++) {
+            if (simulationBoard[row][col] != 0) {
+                return row;
+            }
+        }
+        return -1;
+    }
+
+    // 구슬 떨어트리고 벽돌 깨트리기
+    private static void bfs(int[][] simulationBoard, int r, int c) {
         Queue<int[]> queue = new ArrayDeque<>();
-        queue.add(new int[]{r, c, bricks[r][c]});
-        visited[r][c] = true;
+        queue.add(new int[]{r, c, simulationBoard[r][c]});
+        simulationBoard[r][c] = 0;
 
         while (!queue.isEmpty()) {
             int[] current = queue.poll();
@@ -116,47 +146,43 @@ public class Solution_5656_벽돌깨기 {
             int value = current[2];
 
             for (int i = 0; i < 4; i++) {
-                for (int range = 0; range < value; range++) {
+                for (int range = 1; range < value; range++) {
                     int nextRow = row + DIR_ROW[i] * range;
                     int nextCol = col + DIR_COL[i] * range;
 
-                    if (!visited[nextRow][nextCol]) {
-                        visited[nextRow][nextCol] = true;
-                        queue.add(new int[]{nextRow, nextCol, bricks[nextRow][nextCol]});
-                        bricks[nextRow][nextCol] = 0;
-                        deletedBrickCount++;
+                    if (nextRow < 0 || H <= nextRow || nextCol < 0 || W <= nextCol) {
+                        continue;
                     }
+
+                    if (simulationBoard[nextRow][nextCol] == 0) {
+                        continue;
+                    }
+
+                    if (simulationBoard[nextRow][nextCol] > 1) {
+                        queue.add(new int[]{nextRow, nextCol, simulationBoard[nextRow][nextCol]});
+                    }
+                    simulationBoard[nextRow][nextCol] = 0;
                 }
             }
         }
     }
 
-    private static void adaptGravity() {
+    private static void adaptGravity(int[][] simulationBoard) {
         // 3-1. col별로 아래에서 위로 탐색하며 0이 아닌 숫자 queue에 넣기
         for (int col = 0; col < W; col++) {
             Queue<Integer> queue = new ArrayDeque<>();
             for (int row = H - 1; row >= 0; row--) {
-                if (bricks[row][col] != 0) {
-                    queue.add(bricks[row][col]);
+                if (simulationBoard[row][col] != 0) {
+                    queue.add(simulationBoard[row][col]);
+                    simulationBoard[row][col] = 0;
                 }
             }
 
             // 3-2. 다시 아래에서 위로 올라가며 queue에서 숫자를 빼서 넣기 (중력 적용)
             int row = H - 1;
             while (!queue.isEmpty()) {
-                bricks[row--][col] = queue.poll();
+                simulationBoard[row--][col] = queue.poll();
             }
-        }
-    }
-
-    private static void dfs(int depth) {
-        if (orders.length == 3) {
-            return;
-        }
-
-        for (int i = 0; i < W; i++) {
-            orders[depth] = i;
-            dfs(depth + 1);
         }
     }
 }
