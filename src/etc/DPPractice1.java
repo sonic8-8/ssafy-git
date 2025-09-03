@@ -1,7 +1,6 @@
 package etc;
 
 import java.io.*;
-import java.util.*;
 
 /**
  * 아이디어:
@@ -31,7 +30,7 @@ import java.util.*;
  * 10101
  * dp[5] = 13
  */
-public class Example_1 {
+public class DPPractice1 {
     static int[] dp;
 
     public static void main(String[] args) throws IOException {

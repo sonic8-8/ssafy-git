@@ -1,7 +1,6 @@
 package etc;
 
 import java.io.*;
-import java.util.*;
 
 /**
  * 아이디어:
@@ -39,7 +38,7 @@ import java.util.*;
  * ㅃㅃ
  * dp[4] = dp[3] * 2 + dp[2] = 16 + 13 = 29
  */
-public class Example_2 {
+public class DPPractice2 {
     static int[] dp;
 
     public static void main(String[] args) throws IOException {
