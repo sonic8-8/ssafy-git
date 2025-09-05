@@ -3,24 +3,29 @@ package swea;
 import java.io.*;
 import java.util.*;
 
+/**
+ * 아이디어:
+ * 원자 리스트를 순회하며
+ * 충돌 가능성이 있는 2개의 원자를 충돌쌍 리스트에 넣습니다.
+ * 충돌쌍 리스트를 시간 기준 오름차순 정렬합니다.
+ * 시간 순서대로 원자를 충돌시키고 에너지를 계산합니다.
+ */
+
+/**
+ * 메모리: 39,320 KB
+ * 시간: 244 ms
+ * 난이도: 모의 SW 역량테스트 19.28%
+ */
 public class Solution_5648_원자소멸시뮬레이션 {
     static int T;
     static int N;
 
-    static Queue<int[]> elements;
-    static Map<Integer, List<int[]>> positionElements;
+    static List<Atom> atoms;
 
-    static int[] DIR_ROW = {1, -1, 0, 0};
-    static int[] DIR_COL = {0, 0, -1, 1};
-
-    static final int ROW = 0;
-    static final int COL = 1;
-    static final int DIR = 2;
-    static final int ENERGY = 3;
-
-    static final int HASH = 5000;
-
-    static int totalEnergy;
+    static final int UP = 0;
+    static final int DOWN = 1;
+    static final int LEFT = 2;
+    static final int RIGHT = 3;
 
     static StringBuilder sb = new StringBuilder();
 
@@ -29,41 +34,27 @@ public class Solution_5648_원자소멸시뮬레이션 {
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
 
         T = Integer.parseInt(br.readLine());
-
         for (int t = 1; t <= T; t++) {
             N = Integer.parseInt(br.readLine());
-            elements = new ArrayDeque<>();
+
+            atoms = new ArrayList<>();
 
             for (int i = 0; i < N; i++) {
                 StringTokenizer st = new StringTokenizer(br.readLine());
-                int col = Integer.parseInt(st.nextToken());
-                int row = Integer.parseInt(st.nextToken());
+                int x = Integer.parseInt(st.nextToken());
+                int y = Integer.parseInt(st.nextToken());
                 int dir = Integer.parseInt(st.nextToken());
                 int energy = Integer.parseInt(st.nextToken());
 
-                elements.add(new int[]{row * 2, col * 2, dir, energy});
+                atoms.add(new Atom(x * 2, y * 2, dir, energy));
             }
 
-            // x축, y축 확인
-            // (0, 0)R (1, 0)L: col이 동일하고 row가 작은 쪽이 R 큰 쪽이 L인 경우
-            // (0, 0)U (0, 3)D:
-            // (0, 0)D (0, -3)U
-
-            // 사분면 확인
-            // (0, 0) R 기준 (x1, y1)
-            // 1사분면: X
-            // 2사분면: D (x2, y2), Math.abs(x2 - x1) == Math.abs(y2 - y1)
-            // 3사분면: X
-            // 4사분면: U (x2, y2), Math.abs(x2 - x1) == Math.abs(y2 - y1)
-
-            // 충돌할 경우 에너지를 방출하고 사라진다
-
-            // 이동방향은 일정하다
-            totalEnergy = 0;
-            simulation();
+            List<CollisionPair> collisionPairs = findCollisionPairs();
+            int totalEnergy = getTotalEnergy(collisionPairs);
 
             sb.append("#").append(t).append(" ").append(totalEnergy).append("\n");
         }
+
 
         bw.write(sb.toString());
 
@@ -71,51 +62,102 @@ public class Solution_5648_원자소멸시뮬레이션 {
         bw.close();
     }
 
-    private static void simulation() {
-        // 원소를 모두 한 번 이동시켰을 때 1초 시간이 흐름
-        // 이동 후 위치가 같은 게 몇 개인지에 따라 방출하는 에너지를 계산한다
-        positionElements = new HashMap<>();
+    public static class Atom {
+        int x;
+        int y;
+        int dir;
+        int energy;
 
-        for (int time = 0; time < 2000 && !elements.isEmpty(); time++) {
-            int elementCount = elements.size();
+        public Atom(int x, int y, int dir, int energy) {
+            this.x = x;
+            this.y = y;
+            this.dir = dir;
+            this.energy = energy;
+        }
+    }
 
-            positionElements.clear();
+    public static class CollisionPair {
+        int atomAIndex;
+        int atomBIndex;
+        int time;
 
-            // 1. 원자 이동
-            for (int i = 0; i < elementCount; i++) {
-                int[] current = elements.poll();
-                int row = current[ROW];
-                int col = current[COL];
-                int dir = current[DIR];
-                int energy = current[ENERGY];
+        public CollisionPair(int atomAIndex, int atomBIndex, int time) {
+            this.atomAIndex = atomAIndex;
+            this.atomBIndex = atomBIndex;
+            this.time = time;
+        }
+    }
 
-                row += DIR_ROW[dir];
-                col += DIR_COL[dir];
+    private static List<CollisionPair> findCollisionPairs() {
+        ArrayList<CollisionPair> pairs = new ArrayList<>();
 
-                if (Math.abs(row) > 2000 || Math.abs(col) > 2000) {
-                    continue;
+        atoms.sort(Comparator.comparingInt((Atom a) -> a.x).thenComparingInt(a -> a.y));
+
+        for (int i = 0; i < N; i++) {
+            for (int j = i + 1; j < N; j++) {
+                Atom atomA = atoms.get(i);
+                Atom atomB = atoms.get(j);
+
+                // 수직선
+                if (atomA.x == atomB.x) {
+                    if (atomA.dir == UP && atomB.dir == DOWN) {
+                        pairs.add(new CollisionPair(i, j, Math.abs(atomA.y - atomB.y) / 2));
+                    }
                 }
 
-                // 큐에서 모든 원소를 꺼내 Map으로 이동시킵니다
-                positionElements
-                        .computeIfAbsent(row + HASH + col, k -> new ArrayList<>())
-                        .add(new int[]{row, col, dir, energy});
-            }
+                // 수평선
+                if (atomA.y == atomB.y) {
+                    if (atomA.dir == RIGHT && atomB.dir == LEFT) {
+                        pairs.add(new CollisionPair(i, j, Math.abs(atomA.x - atomB.x) / 2));
+                    }
+                }
 
-            // 2. 충돌 판정
-            for (List<int[]> list : positionElements.values()) {
-                if (list.size() == 1) {
-                    elements.add(list.get(0));
-                } else {
-                    for (int[] element : list) {
-                        totalEnergy += element[ENERGY];
+                // / 대각선
+                // y = x + c
+                // -c = x - y
+                if (atomA.x - atomA.y == atomB.x - atomB.y) {
+                    if (atomA.dir == RIGHT && atomB.dir == DOWN || atomA.dir == UP && atomB.dir == LEFT) {
+                        pairs.add(new CollisionPair(i, j, Math.abs(atomA.x - atomB.x)));
+                    }
+                }
+
+                // \ 대각선
+                // y = -x + c
+                // x + y = c
+                if (atomA.x + atomA.y == atomB.x + atomB.y) {
+                    if (atomA.dir == DOWN && atomB.dir == LEFT || atomA.dir == RIGHT && atomB.dir == UP) {
+                        pairs.add(new CollisionPair(i, j, Math.abs(atomA.x - atomB.x)));
                     }
                 }
             }
+        }
 
-            if (elements.size() <= 1) {
-                break;
+        return pairs;
+    }
+
+    private static int getTotalEnergy(List<CollisionPair> collisionPairs) {
+        // 시간 기준 오름차순
+        collisionPairs.sort(Comparator.comparingInt(a -> a.time));
+
+        int[] times = new int[N];
+        Arrays.fill(times, Integer.MAX_VALUE);
+        int totalEnergy = 0;
+
+        for (CollisionPair pair : collisionPairs) {
+            if (times[pair.atomAIndex] < pair.time
+                    || times[pair.atomBIndex] < pair.time) {
+                continue;
+            }
+
+            if (times[pair.atomAIndex] == Integer.MAX_VALUE) {
+                times[pair.atomAIndex] = pair.time;
+                totalEnergy += atoms.get(pair.atomAIndex).energy;
+            }
+            if (times[pair.atomBIndex] == Integer.MAX_VALUE) {
+                times[pair.atomBIndex] = pair.time;
+                totalEnergy += atoms.get(pair.atomBIndex).energy;
             }
         }
+        return totalEnergy;
     }
 }
