@@ -22,49 +22,53 @@ import java.util.*;
  * 출력: 5
  */
 public class SlotSimulation_복습 {
-    static int N, K;
-
     public static void main(String[] args) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(System.out));
 
         StringTokenizer st = new StringTokenizer(br.readLine());
-        N = Integer.parseInt(st.nextToken());
-        K = Integer.parseInt(st.nextToken());
+        int N = Integer.parseInt(st.nextToken());
+        int K = Integer.parseInt(st.nextToken());
 
         List<Job> jobs = new ArrayList<>();
         for (int i = 0; i < N; i++) {
             st = new StringTokenizer(br.readLine());
             int arrival = Integer.parseInt(st.nextToken());
-            int processing = Integer.parseInt(st.nextToken());
-
-            jobs.add(new Job(arrival, processing));
+            int duration = Integer.parseInt(st.nextToken());
+            jobs.add(new Job(arrival, duration));
         }
 
-        // 도착 시간 관리 (제한을 관리하기 위한 슬롯)
         int[] slots = new int[K];
         int lastEnd = 0;
 
         for (Job job : jobs) {
-            int arrival = job.arrival;
-            int duration = job.duration;
-
             int index = -1;
             for (int i = 0; i < K; i++) {
-                if (slots[i] <= arrival) {
+                if (slots[i] <= job.arrival) {
                     index = i;
                     break;
                 }
             }
 
             int start = 0;
-            if (index )
+            if (index != -1) {
+                start = job.arrival;
+            } else {
+                index = 0;
+                for (int i = 1; i < K; i++) {
+                    if (slots[i] < slots[index]) {
+                        index = i;
+                    }
+                }
+                start = slots[index];
+            }
 
-            slots[index] = start + duration;
+            int end = start + job.duration;
+            slots[index] = end;
             lastEnd = Math.max(lastEnd, slots[index]);
         }
 
-        bw.write();
+        bw.write(String.valueOf(lastEnd));
 
         br.close();
         bw.close();
